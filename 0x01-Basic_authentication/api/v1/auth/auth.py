@@ -1,59 +1,49 @@
 #!/usr/bin/env python3
-""" Auth module
+""" Module of Authentication
 """
 from flask import request
 from typing import List, TypeVar
-import re
 
 
-class Auth():
-    """ Auth class
-    """
+class Auth:
+    """ Class to manage the API authentication """
 
     def require_auth(self, path: str, excluded_paths: List[str]) -> bool:
-        """
-            Args:
-                path: the path
-                excluded_paths: a list of excluded paths
+        """ Method for validating if endpoint requires auth """
+        if path is None or excluded_paths is None or excluded_paths == []:
+            return True
 
-            Returns:
-                True or False
-        """
-        if path and not path.endswith("/"):
-            path += "/"
-        if excluded_paths is None or len(excluded_paths) == 0:
+        l_path = len(path)
+        if l_path == 0:
             return True
-        if path is None:
-            return True
-        for item in excluded_paths:
-            if '*' in item:
-                item = item.replace('*', '.*')
-                item = item.replace('/', r'\/')
-                if re.compile(item).match(path) is not None:
+
+        slash_path = True if path[l_path - 1] == '/' else False
+
+        tmp_path = path
+        if not slash_path:
+            tmp_path += '/'
+
+        for exc in excluded_paths:
+            l_exc = len(exc)
+            if l_exc == 0:
+                continue
+
+            if exc[l_exc - 1] != '*':
+                if tmp_path == exc:
                     return False
-        if path not in excluded_paths:
-            return True
+            else:
+                if exc[:-1] == path[:l_exc - 1]:
+                    return False
 
-        return False
+        return True
 
     def authorization_header(self, request=None) -> str:
-        """
-            Args:
-                request: the Flask request object.
+        """ Method that handles authorization header """
+        if request is None:
+            return None
 
-            Returns:
-                None
-        """
-        if request and "Authorization" in request.headers:
-            return request.headers.get("Authorization", default=None)
-        return None
+        return request.headers.get("Authorization", None)
 
     def current_user(self, request=None) -> TypeVar('User'):
-        """
-            Args:
-                request: the Flask request object.
-
-            Returns:
-                None
-        """
+        """ Validates current user """
         return None
